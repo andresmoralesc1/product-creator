@@ -17,6 +17,39 @@ const PLATFORMS = [
   { id: "facebook", label: "Facebook" },
 ] as const;
 
+function StudioFrame({
+  label,
+  mono,
+  children,
+  download,
+}: {
+  label: string;
+  mono: string;
+  children: React.ReactNode;
+  download?: { href: string; name: string };
+}) {
+  return (
+    <figure className="group border-y border-rule py-6">
+      <figcaption className="mb-4 flex items-baseline justify-between">
+        <span className="font-mono text-micro uppercase tracking-kicker text-ink-dim">
+          {mono}
+        </span>
+        <span className="font-display text-lg italic text-ink">{label}</span>
+      </figcaption>
+      <div className="relative">{children}</div>
+      {download && (
+        <a
+          href={download.href}
+          download={download.name}
+          className="mt-4 inline-block font-mono text-micro uppercase tracking-kicker text-ink-dim hover:text-accent"
+        >
+          ↓ Descargar
+        </a>
+      )}
+    </figure>
+  );
+}
+
 export function ResultDisplay({ job }: Props) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [caption, setCaption] = useState(
@@ -55,129 +88,144 @@ export function ResultDisplay({ job }: Props) {
   }
 
   return (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-      <div className="space-y-4">
-        <div className="rounded-lg border border-white/10 bg-white/5 p-3">
-          <p className="mb-2 text-xs uppercase tracking-wide text-white/50">
-            Foto original
-          </p>
+    <div className="animate-studio-up">
+      <p className="mb-12 font-mono text-micro uppercase tracking-kicker text-accent">
+        Resultado · listo para publicar
+      </p>
+
+      <div className="grid grid-cols-1 gap-12 md:grid-cols-2">
+        <StudioFrame
+          label="Original"
+          mono={`Original · ${job.id}`}
+          download={{ href: job.originalPhotoUrl, name: `original-${job.id}` }}
+        >
           <Image
             src={job.originalPhotoUrl}
             alt="original"
             width={800}
             height={800}
             unoptimized
-            className="h-auto w-full rounded object-contain"
+            className="h-auto w-full"
           />
-          <a
-            href={job.originalPhotoUrl}
-            download
-            className="mt-2 inline-block text-xs text-accent underline"
-          >
-            Descargar
-          </a>
-        </div>
+        </StudioFrame>
+
         {job.marketingPhotoUrl && (
-          <div className="rounded-lg border border-white/10 bg-white/5 p-3">
-            <p className="mb-2 text-xs uppercase tracking-wide text-white/50">
-              Foto marketing (AI — producto preservado)
-            </p>
+          <StudioFrame
+            label="Marketing"
+            mono="Gemini · 2.5 Flash Image"
+            download={{
+              href: job.marketingPhotoUrl,
+              name: `marketing-${job.id}`,
+            }}
+          >
             <Image
               src={job.marketingPhotoUrl}
               alt="marketing"
               width={800}
               height={800}
               unoptimized
-              className="h-auto w-full rounded object-contain"
+              className="h-auto w-full"
             />
-            <a
-              href={job.marketingPhotoUrl}
-              download
-              className="mt-2 inline-block text-xs text-accent underline"
-            >
-              Descargar
-            </a>
-          </div>
+          </StudioFrame>
         )}
       </div>
 
-      <div className="space-y-4">
-        {job.videoUrl && (
-          <div className="rounded-lg border border-white/10 bg-white/5 p-3">
-            <p className="mb-2 text-xs uppercase tracking-wide text-white/50">
-              Video generado
-            </p>
-            <video
-              src={job.videoUrl}
-              controls
-              className="w-full rounded"
-            />
-            <a
-              href={job.videoUrl}
-              download
-              className="mt-2 inline-block text-xs text-accent underline"
-            >
-              Descargar video
-            </a>
-          </div>
-        )}
+      {job.videoUrl && (
+        <StudioFrame
+          label="Video"
+          mono={`MiniMax · H3 · 768P · 5s`}
+          download={{ href: job.videoUrl, name: `video-${job.id}` }}
+        >
+          <video
+            src={job.videoUrl}
+            controls
+            className="aspect-video w-full bg-bg"
+          />
+        </StudioFrame>
+      )}
 
-        <div className="rounded-lg border border-white/10 bg-white/5 p-4">
-          <p className="mb-2 text-sm font-medium">Publicar en redes</p>
-          <div className="mb-3 flex flex-wrap gap-2">
-            {PLATFORMS.map((p) => {
-              const active = selected.has(p.id);
-              return (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => togglePlatform(p.id)}
-                  className={cn(
-                    "rounded-full border px-3 py-1 text-xs",
-                    active
-                      ? "border-accent bg-accent/10 text-white"
-                      : "border-white/10 bg-white/5 text-white/60",
-                  )}
-                >
-                  {p.label}
-                </button>
-              );
-            })}
-          </div>
+      <section className="mt-16 border-t border-rule pt-12">
+        <p className="mb-3 font-mono text-micro uppercase tracking-kicker text-ink-dim">
+          Publicar
+        </p>
+        <h2 className="font-display text-h-md text-ink md:text-display-lg">
+          Caption + destinos
+        </h2>
+
+        <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-[28rem_1fr]">
           <Textarea
-            rows={3}
+            rows={5}
             value={caption}
             onChange={(e) => setCaption(e.target.value)}
-            placeholder="Caption..."
+            showCount
+            maxLength={2200}
+            placeholder="Caption para tus posts"
           />
-          <div className="mt-3 flex justify-end">
-            <Button
-              onClick={publish}
-              disabled={posting || selected.size === 0}
-            >
-              {posting ? "Publicando..." : "Publicar"}
-            </Button>
+
+          <div className="space-y-4">
+            <p className="font-mono text-micro uppercase tracking-kicker text-ink-dim">
+              Destinos
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {PLATFORMS.map((p) => {
+                const active = selected.has(p.id);
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => togglePlatform(p.id)}
+                    className={cn(
+                      "inline-flex items-center gap-2 border px-4 py-2 font-mono text-caption uppercase tracking-caption transition",
+                      active
+                        ? "border-accent text-ink"
+                        : "border-rule text-ink-muted hover:border-ink-muted hover:text-ink",
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "text-base",
+                        active ? "text-accent" : "text-ink-dim",
+                      )}
+                      aria-hidden
+                    >
+                      ●
+                    </span>
+                    {p.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="flex items-center justify-between border-t border-rule pt-6">
+              <span className="font-mono text-micro uppercase tracking-kicker text-ink-dim">
+                {selected.size} destinos
+              </span>
+              <Button onClick={publish} disabled={posting || selected.size === 0}>
+                {posting ? "Publicando…" : "Publicar"}
+              </Button>
+            </div>
+
+            {Object.keys(results).length > 0 && (
+              <ul className="space-y-1 border-l-2 border-accent pl-4">
+                {Object.entries(results).map(([p, id]) => (
+                  <li key={p} className="font-mono text-micro uppercase tracking-kicker text-ink">
+                    {p} · OK · {id}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {Object.keys(errors).length > 0 && (
+              <ul className="space-y-1 border-l-2 border-accent pl-4">
+                {Object.entries(errors).map(([p, msg]) => (
+                  <li key={p} className="font-mono text-micro uppercase tracking-kicker text-ink-muted">
+                    {p} · {msg}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
-          {Object.keys(results).length > 0 && (
-            <div className="mt-3 space-y-1 text-xs">
-              {Object.entries(results).map(([p, id]) => (
-                <p key={p} className="text-green-300">
-                  {p}: publicado ({id})
-                </p>
-              ))}
-            </div>
-          )}
-          {Object.keys(errors).length > 0 && (
-            <div className="mt-3 space-y-1 text-xs">
-              {Object.entries(errors).map(([p, msg]) => (
-                <p key={p} className="text-red-300">
-                  {p}: {msg}
-                </p>
-              ))}
-            </div>
-          )}
         </div>
-      </div>
+      </section>
     </div>
   );
 }

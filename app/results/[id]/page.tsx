@@ -51,68 +51,109 @@ export default function ResultPage() {
 
   if (!job) {
     return (
-      <main className="mx-auto max-w-3xl px-4 py-10">
-        <p className="text-sm text-white/60">Cargando...</p>
+      <main className="py-20">
+        <p className="font-mono text-micro uppercase tracking-kicker text-ink-dim cursor-blink">
+          Cargando trabajo
+        </p>
       </main>
     );
   }
 
   return (
-    <main className="mx-auto max-w-5xl px-4 py-10">
-      <header className="mb-6 flex items-center justify-between">
+    <main className="pb-32 pt-12 md:pt-20">
+      <header className="mb-16 flex items-end justify-between border-b border-rule pb-6">
         <div>
-          <h1 className="text-2xl font-semibold">Trabajo {job.id}</h1>
-          <p className="mt-1 text-sm text-white/60">{job.description}</p>
+          <p className="mb-2 font-mono text-micro uppercase tracking-kicker text-ink-dim">
+            Trabajo · {job.id}
+          </p>
+          <h1 className="font-display text-display-lg text-ink md:text-[3.5rem]">
+            {job.description}
+          </h1>
         </div>
-        <Link href="/" className="text-sm text-accent underline">
-          Nuevo producto
+        <Link
+          href="/"
+          className="font-mono text-micro uppercase tracking-kicker text-ink-dim hover:text-accent"
+        >
+          ← Nuevo trabajo
         </Link>
       </header>
 
       {job.status === "pending" && (
-        <div className="space-y-4">
-          <div className="rounded-lg border border-white/10 bg-white/5 p-4">
+        <div className="grid grid-cols-1 gap-12 lg:grid-cols-[1fr_28rem]">
+          <figure className="border-y border-rule py-6">
+            <figcaption className="mb-4 flex items-baseline justify-between">
+              <span className="font-mono text-micro uppercase tracking-kicker text-ink-dim">
+                Original · {job.id}
+              </span>
+              <span className="font-display text-lg italic text-ink">
+                Pendiente
+              </span>
+            </figcaption>
             <Image
               src={job.originalPhotoUrl}
               alt="preview"
-              width={768}
-              height={384}
+              width={800}
+              height={600}
               unoptimized
-              className="mx-auto max-h-96 rounded object-contain"
+              className="h-auto w-full"
             />
-          </div>
-          <div className="flex justify-end">
-            <Button onClick={startGenerate} disabled={starting}>
-              {starting ? "Iniciando..." : "Generar contenido AI"}
-            </Button>
+          </figure>
+
+          <div className="space-y-6 lg:sticky lg:top-12 lg:self-start">
+            <div>
+              <p className="mb-3 font-mono text-micro uppercase tracking-kicker text-ink-dim">
+                Pasos
+              </p>
+              <ol className="space-y-3">
+                {[
+                  ["01", "Editar foto · preserva producto"],
+                  ["02", "Generar video · 5s · 768P"],
+                  ["03", "Publicar"],
+                ].map(([n, t]) => (
+                  <li
+                    key={n}
+                    className="flex items-baseline gap-4 border-b border-rule pb-3"
+                  >
+                    <span className="font-mono text-micro uppercase tracking-kicker text-accent">
+                      {n}
+                    </span>
+                    <span className="text-sm text-ink">{t}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+            <div className="flex justify-end">
+              <Button onClick={startGenerate} disabled={starting}>
+                {starting ? "Iniciando…" : "Generar contenido"}
+              </Button>
+            </div>
           </div>
         </div>
       )}
 
       {(job.status === "editing_image" ||
         job.status === "video_processing") && (
-        <div className="space-y-6">
-          <ProcessingStatus job={job} onChange={setJob} />
-          <div className="rounded-lg border border-white/10 bg-white/5 p-4">
-            {job.marketingPhotoUrl ? (
-              <Image
-                src={job.marketingPhotoUrl}
-                alt="preview"
-                width={768}
-                height={384}
-                unoptimized
-                className="mx-auto max-h-96 rounded object-contain"
-              />
-            ) : job.originalPhotoUrl ? (
-              <Image
-                src={job.originalPhotoUrl}
-                alt="preview"
-                width={768}
-                height={384}
-                unoptimized
-                className="mx-auto max-h-96 rounded object-contain opacity-60"
-              />
-            ) : null}
+        <div className="grid grid-cols-1 gap-12 lg:grid-cols-[1fr_28rem]">
+          <figure className="border-y border-rule py-6">
+            <figcaption className="mb-4 flex items-baseline justify-between">
+              <span className="font-mono text-micro uppercase tracking-kicker text-ink-dim">
+                {job.marketingPhotoUrl ? "Marketing · preview" : "Original"}
+              </span>
+              <span className="font-display text-lg italic text-ink">
+                {job.status === "editing_image" ? "Editando" : "Video"}
+              </span>
+            </figcaption>
+            <Image
+              src={job.marketingPhotoUrl || job.originalPhotoUrl}
+              alt="preview"
+              width={800}
+              height={600}
+              unoptimized
+              className={`h-auto w-full ${!job.marketingPhotoUrl ? "opacity-60" : ""}`}
+            />
+          </figure>
+          <div className="lg:sticky lg:top-12 lg:self-start">
+            <ProcessingStatus job={job} onChange={setJob} />
           </div>
         </div>
       )}
@@ -120,7 +161,7 @@ export default function ResultPage() {
       {job.status === "ready" && <ResultDisplay job={job} />}
 
       {startError && (
-        <div className="mt-4 rounded border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-200">
+        <div className="mt-8 border-l-2 border-accent bg-accent/10 px-4 py-3 text-sm text-ink">
           {startError}
         </div>
       )}

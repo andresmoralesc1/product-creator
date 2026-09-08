@@ -3,18 +3,22 @@
 import { forwardRef } from "react";
 import { cn } from "@/lib/utils";
 
-type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: "primary" | "secondary" | "ghost";
-};
+type Variant = "primary" | "ghost";
+
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: Variant;
+}
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = "primary", ...props }, ref) => {
     const base =
-      "inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition disabled:opacity-50 disabled:cursor-not-allowed";
-    const variants = {
-      primary: "bg-accent text-white hover:opacity-90",
-      secondary: "bg-white/10 text-white hover:bg-white/20",
-      ghost: "bg-transparent text-white hover:bg-white/10",
+      "inline-flex items-center justify-center px-5 py-3 font-mono text-caption uppercase tracking-caption transition disabled:cursor-not-allowed disabled:opacity-40";
+    const variants: Record<Variant, string> = {
+      primary:
+        "bg-accent text-accent-ink hover:-translate-y-px hover:shadow-accent-lift",
+      ghost:
+        "border border-rule bg-transparent text-ink hover:bg-surface-2",
     };
     return (
       <button

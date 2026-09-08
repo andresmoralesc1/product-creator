@@ -9,9 +9,13 @@ interface CategoryPickerProps {
   onChange: (id: string) => void;
 }
 
-export function CategoryPicker({ categories, value, onChange }: CategoryPickerProps) {
+export function CategoryPicker({
+  categories,
+  value,
+  onChange,
+}: CategoryPickerProps) {
   return (
-    <div className="grid grid-cols-3 gap-2">
+    <div className="flex flex-wrap gap-2">
       {categories.map((c) => {
         const active = c.id === value;
         return (
@@ -20,13 +24,21 @@ export function CategoryPicker({ categories, value, onChange }: CategoryPickerPr
             type="button"
             onClick={() => onChange(c.id)}
             className={cn(
-              "flex flex-col items-center justify-center gap-1 rounded-lg border px-2 py-3 text-xs",
+              "inline-flex items-center gap-2 border px-3 py-2 font-mono text-caption uppercase tracking-caption transition",
               active
-                ? "border-accent bg-accent/10"
-                : "border-white/10 bg-white/5 hover:bg-white/10",
+                ? "border-accent text-ink"
+                : "border-rule text-ink-muted hover:border-ink-muted hover:text-ink",
             )}
           >
-            <span className="text-2xl">{c.emoji}</span>
+            <span
+              className={cn(
+                "text-base leading-none",
+                active ? "text-accent" : "text-ink-dim",
+              )}
+              aria-hidden
+            >
+              {c.emoji}
+            </span>
             <span>{c.label}</span>
           </button>
         );
