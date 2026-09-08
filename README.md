@@ -10,8 +10,8 @@ almacenamiento local.
 ## Features
 
 - Upload de foto + descripción corta + categoría
-- Generación de imagen de marketing con MiniMax (`/v1/image_generation`, sync)
-- Generación de video desde la foto original con MiniMax (`/v2/video_generation`, async, webhook)
+- **Edición de imagen con nano-banana (Gemini 2.5 Flash Image)** — preserva el producto mientras cambia fondo / estilo
+- **Generación de video desde la foto original con MiniMax** (`/v2/video_generation`, async, webhook) — el primer frame es tu producto real
 - 6 categorías con prompts por defecto editables: Zapatos, Ropa, Electrónica, Cosméticos, Alimentos, Hogar
 - Webhook de MiniMax con handshake de challenge → descarga automática del video al filesystem local
 - Publicación a Instagram, TikTok y Facebook (config opcional)
@@ -35,7 +35,8 @@ npm run dev
 ```
 
 Variables mínimas:
-- `MINIMAX_API_KEY`
+- `MINIMAX_API_KEY` (video)
+- `GEMINI_API_KEY` (image edit, nano-banana)
 - `APP_BASE_URL` (necesario para webhooks, debe ser accesible públicamente)
 - `STORAGE_DIR` (default: `<proyecto>/data`)
 
@@ -49,14 +50,14 @@ simplemente no se pueden usar.
 2. POST /api/upload guarda la foto, crea job, devuelve jobId
 3. UI redirige a /results/{jobId}
 4. Usuario hace clic en "Generar contenido AI" → POST /api/jobs/{id}/generate
-5. Backend llama MiniMax /v1/image_generation (sync, ~3s)
-6. Descarga la imagen a /data/outputs y la asocia al job
-7. Backend llama MiniMax /v2/video_generation (async, devuelve task_id)
+5. Backend llama nano-banana (Gemini 2.5 Flash Image) — edita la foto preservando el producto
+6. Guarda el base64 de la imagen editada en /data/outputs
+7. Backend llama MiniMax /v2/video_generation con la foto ORIGINAL como first_frame
 8. UI hace polling a /api/jobs/{id} cada 4s
 9. MiniMax hace handshake challenge con /api/webhooks/minimax
 10. Cuando el video termina, MiniMax POSTea update a /api/webhooks/minimax
 11. Webhook descarga el mp4 a /data/outputs y marca el job como "ready"
-12. UI muestra ResultDisplay con descargas y formulario para publicar a redes
+12. UI muestra ResultDisplay con foto original + editada + video + publicar
 ```
 
 ## Estructura
@@ -79,7 +80,8 @@ components/
   ResultDisplay.tsx
   ui/ (button, input, textarea)
 lib/
-  minimax.ts                        # cliente API MiniMax
+  minimax.ts                        # cliente API MiniMax (video)
+  nano-banana.ts                    # cliente Gemini 2.5 Flash Image (image edit)
   storage.ts                        # filesystem local
   categories.ts                     # 6 categorías + prompts por categoría
   jobs.ts                           # CRUD sobre data/jobs.json
@@ -95,17 +97,19 @@ data/
   jobs.json                         # estado de jobs
 ```
 
-## Endpoints MiniMax usados
+## Endpoints externos usados
 
-Basado en `https://platform.minimax.io/docs/api-reference/`:
+- **nano-banana (Gemini 2.5 Flash Image)**: `POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=$GEMINI_API_KEY`
+  - Input: `contents[0].parts: [{text}, {inline_data: {mime_type, data: base64}}]`
+  - Config: `generationConfig.responseModalities: ["IMAGE"]`
+  - Output: `candidates[0].content.parts[].inline_data.data` (base64)
+  - Precio: $0.039/imagen
 
-- `POST /v1/image_generation` (sync) — recibe `{ model, prompt, aspect_ratio, response_format, n }`
-  y opcional `{ subject_reference: [{ type: "character", image_file }] }`.
-  Retorna `{ data.image_urls[], metadata }`.
-- `POST /v2/video_generation` (async) — recibe `{ model, content: [{type: "text"}, {type: "image_url", role: "first_frame"}], resolution, duration, callback_url }`.
-  Retorna `{ task_id }`.
-- `GET /v2/query/video_generation/{task_id}` — polling fallback.
-- Webhook callback con handshake `challenge` (responder `{ challenge }` para verificar).
+- **MiniMax video generation**: `POST https://api.minimax.io/v2/video_generation`
+  - Input: `{ model: "MiniMax-H3", content: [{type:"text"},{type:"image_url",role:"first_frame"}], resolution, duration, callback_url }`
+  - Output: `{ task_id }`
+  - Query: `GET https://api.minimax.io/v2/query/video_generation/{task_id}`
+  - Webhook con handshake `challenge`.
 
 ## Limitaciones conocidas
 

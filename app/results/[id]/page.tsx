@@ -40,6 +40,7 @@ export default function ResultPage() {
           ? {
               ...prev,
               status: "video_processing",
+              marketingPhotoUrl: data.marketingPhotoUrl,
               minimaxVideoTaskId: data.videoTaskId,
             }
           : prev,
@@ -82,24 +83,36 @@ export default function ResultPage() {
           </div>
           <div className="flex justify-end">
             <Button onClick={startGenerate} disabled={starting}>
-              {starting ? "Iniciando..." : "Generar video"}
+              {starting ? "Iniciando..." : "Generar contenido AI"}
             </Button>
           </div>
         </div>
       )}
 
-      {job.status === "video_processing" && (
+      {(job.status === "editing_image" ||
+        job.status === "video_processing") && (
         <div className="space-y-6">
           <ProcessingStatus job={job} onChange={setJob} />
           <div className="rounded-lg border border-white/10 bg-white/5 p-4">
-            <Image
-              src={job.originalPhotoUrl}
-              alt="preview"
-              width={768}
-              height={384}
-              unoptimized
-              className="mx-auto max-h-96 rounded object-contain opacity-60"
-            />
+            {job.marketingPhotoUrl ? (
+              <Image
+                src={job.marketingPhotoUrl}
+                alt="preview"
+                width={768}
+                height={384}
+                unoptimized
+                className="mx-auto max-h-96 rounded object-contain"
+              />
+            ) : job.originalPhotoUrl ? (
+              <Image
+                src={job.originalPhotoUrl}
+                alt="preview"
+                width={768}
+                height={384}
+                unoptimized
+                className="mx-auto max-h-96 rounded object-contain opacity-60"
+              />
+            ) : null}
           </div>
         </div>
       )}

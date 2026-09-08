@@ -77,6 +77,28 @@ export function ResultDisplay({ job }: Props) {
             Descargar
           </a>
         </div>
+        {job.marketingPhotoUrl && (
+          <div className="rounded-lg border border-white/10 bg-white/5 p-3">
+            <p className="mb-2 text-xs uppercase tracking-wide text-white/50">
+              Foto marketing (AI — producto preservado)
+            </p>
+            <Image
+              src={job.marketingPhotoUrl}
+              alt="marketing"
+              width={800}
+              height={800}
+              unoptimized
+              className="h-auto w-full rounded object-contain"
+            />
+            <a
+              href={job.marketingPhotoUrl}
+              download
+              className="mt-2 inline-block text-xs text-accent underline"
+            >
+              Descargar
+            </a>
+          </div>
+        )}
       </div>
 
       <div className="space-y-4">

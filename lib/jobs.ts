@@ -4,7 +4,8 @@ import type { ProductJob, JobStatus } from "./types";
 import { STORAGE_PATHS } from "./storage";
 
 const VALID_TRANSITIONS: Record<JobStatus, JobStatus[]> = {
-  pending: ["video_processing", "failed"],
+  pending: ["editing_image", "failed"],
+  editing_image: ["video_processing", "failed"],
   video_processing: ["ready", "failed"],
   ready: [],
   failed: [],

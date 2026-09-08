@@ -24,6 +24,8 @@ export async function POST(req: Request) {
       );
     }
 
+    const photoUrl = job.marketingPhotoUrl || job.originalPhotoUrl;
+
     const results: Record<string, string> = {};
     const errors: Record<string, string> = {};
 
@@ -32,7 +34,7 @@ export async function POST(req: Request) {
         try {
           if (p === "instagram") {
             const r = await postToInstagram({
-              imageUrl: job.originalPhotoUrl,
+              imageUrl: photoUrl,
               caption,
               videoUrl: job.videoUrl,
             });
@@ -46,7 +48,7 @@ export async function POST(req: Request) {
             results.tiktok = r.postId;
           } else if (p === "facebook") {
             const r = await postToFacebook({
-              imageUrl: job.originalPhotoUrl,
+              imageUrl: photoUrl,
               caption,
               videoUrl: job.videoUrl,
             });
