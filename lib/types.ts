@@ -15,7 +15,6 @@ export interface CategoryPreset {
 
 export type JobStatus =
   | "pending"
-  | "generating_image"
   | "video_processing"
   | "ready"
   | "failed";
@@ -29,7 +28,6 @@ export interface ProductJob {
   description: string;
   prompt: string;
   originalPhotoUrl: string;
-  marketingPhotoUrl?: string;
   videoUrl?: string;
   errorMessage?: string;
   minimaxVideoTaskId?: string;

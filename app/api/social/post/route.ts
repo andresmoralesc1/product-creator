@@ -17,7 +17,7 @@ export async function POST(req: Request) {
     if (!job) {
       return NextResponse.json({ error: "job not found" }, { status: 404 });
     }
-    if (job.status !== "ready" || !job.marketingPhotoUrl) {
+    if (job.status !== "ready" || !job.videoUrl) {
       return NextResponse.json(
         { error: "job not ready" },
         { status: 400 },
@@ -30,25 +30,27 @@ export async function POST(req: Request) {
     await Promise.all(
       platforms.map(async (p) => {
         try {
-          if (p === "instagram" && job.marketingPhotoUrl) {
+          if (p === "instagram") {
             const r = await postToInstagram({
-              imageUrl: job.marketingPhotoUrl,
+              imageUrl: job.originalPhotoUrl,
               caption,
               videoUrl: job.videoUrl,
             });
             results.instagram = r.postId;
-          } else if (p === "tiktok" && job.videoUrl) {
+          } else if (p === "tiktok") {
+            if (!job.videoUrl) {
+              errors[p] = "video required for tiktok";
+              return;
+            }
             const r = await postToTikTok({ videoUrl: job.videoUrl, caption });
             results.tiktok = r.postId;
-          } else if (p === "facebook" && job.marketingPhotoUrl) {
+          } else if (p === "facebook") {
             const r = await postToFacebook({
-              imageUrl: job.marketingPhotoUrl,
+              imageUrl: job.originalPhotoUrl,
               caption,
               videoUrl: job.videoUrl,
             });
             results.facebook = r.postId;
-          } else {
-            errors[p] = "asset missing for this platform";
           }
         } catch (err) {
           errors[p] = err instanceof Error ? err.message : "post failed";

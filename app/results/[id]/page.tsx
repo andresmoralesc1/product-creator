@@ -40,7 +40,6 @@ export default function ResultPage() {
           ? {
               ...prev,
               status: "video_processing",
-              marketingPhotoUrl: data.marketingPhotoUrl,
               minimaxVideoTaskId: data.videoTaskId,
             }
           : prev,
@@ -83,47 +82,29 @@ export default function ResultPage() {
           </div>
           <div className="flex justify-end">
             <Button onClick={startGenerate} disabled={starting}>
-              {starting ? "Iniciando..." : "Generar contenido AI"}
+              {starting ? "Iniciando..." : "Generar video"}
             </Button>
           </div>
         </div>
       )}
 
-      {(job.status === "generating_image" ||
-        job.status === "video_processing" ||
-        job.status === "ready") && (
+      {job.status === "video_processing" && (
         <div className="space-y-6">
-          {job.status !== "ready" && (
-            <ProcessingStatus job={job} onChange={setJob} />
-          )}
-
-          {job.status === "ready" ? (
-            <ResultDisplay job={job} />
-          ) : (
-            <div className="rounded-lg border border-white/10 bg-white/5 p-4">
-              {job.marketingPhotoUrl ? (
-                <Image
-                  src={job.marketingPhotoUrl}
-                  alt="preview"
-                  width={768}
-                  height={384}
-                  unoptimized
-                  className="mx-auto max-h-96 rounded object-contain"
-                />
-              ) : job.originalPhotoUrl ? (
-                <Image
-                  src={job.originalPhotoUrl}
-                  alt="preview"
-                  width={768}
-                  height={384}
-                  unoptimized
-                  className="mx-auto max-h-96 rounded object-contain opacity-60"
-                />
-              ) : null}
-            </div>
-          )}
+          <ProcessingStatus job={job} onChange={setJob} />
+          <div className="rounded-lg border border-white/10 bg-white/5 p-4">
+            <Image
+              src={job.originalPhotoUrl}
+              alt="preview"
+              width={768}
+              height={384}
+              unoptimized
+              className="mx-auto max-h-96 rounded object-contain opacity-60"
+            />
+          </div>
         </div>
       )}
+
+      {job.status === "ready" && <ResultDisplay job={job} />}
 
       {startError && (
         <div className="mt-4 rounded border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-200">

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getJob, updateJob } from "@/lib/jobs";
-import { generateImage, generateVideoFromImage } from "@/lib/minimax";
-import { downloadToStorage } from "@/lib/storage";
+import { generateVideoFromImage } from "@/lib/minimax";
+import { VIDEO_MOTION_PROMPTS } from "@/lib/categories";
 
 export const runtime = "nodejs";
 
@@ -22,40 +22,20 @@ export async function POST(
       );
     }
 
-    await updateJob(id, { status: "generating_image" });
-
-    const imageRes = await generateImage({
-      prompt: job.prompt,
-      aspectRatio: "1:1",
-    });
-    const firstImageUrl = imageRes.imageUrls[0];
-    if (!firstImageUrl) {
-      throw new Error("MiniMax returned no image URLs");
-    }
-
-    const marketingPhotoUrl = await downloadToStorage(
-      firstImageUrl,
-      "output",
-      `${id}-marketing`,
-    );
-
+    const motionPrompt = `${VIDEO_MOTION_PROMPTS[job.category]} ${job.prompt}`;
     const videoRes = await generateVideoFromImage({
       imageUrl: job.originalPhotoUrl,
-      prompt: `${job.prompt} Smooth subtle camera motion, cinematic lighting.`,
+      prompt: motionPrompt,
       durationSec: 5,
       resolution: "768P",
     });
 
     await updateJob(id, {
       status: "video_processing",
-      marketingPhotoUrl,
       minimaxVideoTaskId: videoRes.taskId,
     });
 
-    return NextResponse.json({
-      marketingPhotoUrl,
-      videoTaskId: videoRes.taskId,
-    });
+    return NextResponse.json({ videoTaskId: videoRes.taskId });
   } catch (err) {
     try {
       const { id } = await ctx.params;
