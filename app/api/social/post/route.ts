@@ -17,7 +17,7 @@ export async function POST(req: Request) {
     if (!job) {
       return NextResponse.json({ error: "job not found" }, { status: 404 });
     }
-    if (job.status !== "ready" || !job.editedPhotoUrl) {
+    if (job.status !== "ready" || !job.marketingPhotoUrl) {
       return NextResponse.json(
         { error: "job not ready" },
         { status: 400 },
@@ -30,9 +30,9 @@ export async function POST(req: Request) {
     await Promise.all(
       platforms.map(async (p) => {
         try {
-          if (p === "instagram" && job.editedPhotoUrl) {
+          if (p === "instagram" && job.marketingPhotoUrl) {
             const r = await postToInstagram({
-              imageUrl: job.editedPhotoUrl,
+              imageUrl: job.marketingPhotoUrl,
               caption,
               videoUrl: job.videoUrl,
             });
@@ -40,9 +40,9 @@ export async function POST(req: Request) {
           } else if (p === "tiktok" && job.videoUrl) {
             const r = await postToTikTok({ videoUrl: job.videoUrl, caption });
             results.tiktok = r.postId;
-          } else if (p === "facebook" && job.editedPhotoUrl) {
+          } else if (p === "facebook" && job.marketingPhotoUrl) {
             const r = await postToFacebook({
-              imageUrl: job.editedPhotoUrl,
+              imageUrl: job.marketingPhotoUrl,
               caption,
               videoUrl: job.videoUrl,
             });

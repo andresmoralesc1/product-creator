@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import type { ProductJob } from "@/lib/types";
-import type { SocialPostResult } from "@/lib/types";
 
 interface Props {
   job: ProductJob;
@@ -78,21 +77,21 @@ export function ResultDisplay({ job }: Props) {
             Descargar
           </a>
         </div>
-        {job.editedPhotoUrl && (
+        {job.marketingPhotoUrl && (
           <div className="rounded-lg border border-white/10 bg-white/5 p-3">
             <p className="mb-2 text-xs uppercase tracking-wide text-white/50">
-              Foto editada con AI
+              Foto marketing (AI)
             </p>
             <Image
-              src={job.editedPhotoUrl}
-              alt="edited"
+              src={job.marketingPhotoUrl}
+              alt="marketing"
               width={800}
               height={800}
               unoptimized
               className="h-auto w-full rounded object-contain"
             />
             <a
-              href={job.editedPhotoUrl}
+              href={job.marketingPhotoUrl}
               download
               className="mt-2 inline-block text-xs text-accent underline"
             >

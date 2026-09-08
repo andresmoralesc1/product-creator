@@ -15,7 +15,7 @@ export interface CategoryPreset {
 
 export type JobStatus =
   | "pending"
-  | "editing"
+  | "generating_image"
   | "video_processing"
   | "ready"
   | "failed";
@@ -29,10 +29,9 @@ export interface ProductJob {
   description: string;
   prompt: string;
   originalPhotoUrl: string;
-  editedPhotoUrl?: string;
+  marketingPhotoUrl?: string;
   videoUrl?: string;
   errorMessage?: string;
-  minimaxEditTaskId?: string;
   minimaxVideoTaskId?: string;
   socialPosts?: {
     instagram?: string;
@@ -41,19 +40,22 @@ export interface ProductJob {
   };
 }
 
-export interface MiniMaxTaskResponse {
-  task_id: string;
-  status: "pending" | "running" | "succeeded" | "failed";
-  output?: {
-    url?: string;
-    images?: string[];
-    videos?: string[];
-  };
-  error?: string;
-}
-
 export interface SocialPostResult {
   platform: "instagram" | "tiktok" | "facebook";
   postId: string;
   url?: string;
+}
+
+export type VideoTaskStatus =
+  | "queued"
+  | "running"
+  | "succeeded"
+  | "failed"
+  | "cancelled";
+
+export interface VideoTask {
+  id: string;
+  status: VideoTaskStatus;
+  content?: { url?: string };
+  error?: { code: string; message: string };
 }

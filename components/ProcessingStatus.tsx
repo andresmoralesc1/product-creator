@@ -2,7 +2,6 @@
 
 import { useEffect } from "react";
 import type { ProductJob } from "@/lib/types";
-import { Button } from "@/components/ui/button";
 
 interface Props {
   job: ProductJob;
@@ -10,8 +9,7 @@ interface Props {
 }
 
 const STEPS = [
-  { id: "pending", label: "Subido" },
-  { id: "editing", label: "Editando foto con AI" },
+  { id: "generating_image", label: "Generando imagen de marketing" },
   { id: "video_processing", label: "Generando video" },
   { id: "ready", label: "Listo" },
 ];
@@ -42,24 +40,33 @@ export function ProcessingStatus({ job, onChange }: Props) {
   }
 
   const activeIdx = STEPS.findIndex((s) => s.id === job.status);
+  const done = job.status === "ready";
 
   return (
     <div className="rounded-lg border border-white/10 bg-white/5 p-4">
       <ol className="flex flex-col gap-3">
         {STEPS.map((s, i) => {
-          const done = i < activeIdx || job.status === "ready";
-          const active = i === activeIdx && job.status !== "ready";
+          const stepDone = done || i < activeIdx;
+          const stepActive = !done && i === activeIdx;
           return (
             <li key={s.id} className="flex items-center gap-3 text-sm">
               <span
                 className={`h-2 w-2 rounded-full ${
-                  done ? "bg-green-400" : active ? "bg-accent animate-pulse" : "bg-white/20"
+                  stepDone
+                    ? "bg-green-400"
+                    : stepActive
+                    ? "bg-accent animate-pulse"
+                    : "bg-white/20"
                 }`}
               />
-              <span className={done || active ? "text-white" : "text-white/40"}>
+              <span
+                className={
+                  stepDone || stepActive ? "text-white" : "text-white/40"
+                }
+              >
                 {s.label}
               </span>
-              {active && !done && (
+              {stepActive && !stepDone && (
                 <span className="text-xs text-white/40">en curso...</span>
               )}
             </li>

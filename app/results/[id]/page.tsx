@@ -24,42 +24,25 @@ export default function ResultPage() {
       .catch(() => null);
   }, [id]);
 
-  async function startEdit() {
+  async function startGenerate() {
     if (!job) return;
     setStarting(true);
     setStartError(null);
-    const res = await fetch("/api/minimax/edit", {
+    const res = await fetch(`/api/jobs/${job.id}/generate`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ jobId: job.id }),
     });
     const data = await res.json();
     if (!res.ok) {
-      setStartError(data.error || "no se pudo iniciar la edición");
-    } else {
-      setJob((prev) =>
-        prev ? { ...prev, status: "editing", minimaxEditTaskId: data.taskId } : prev,
-      );
-    }
-    setStarting(false);
-  }
-
-  async function startVideo() {
-    if (!job) return;
-    setStarting(true);
-    setStartError(null);
-    const res = await fetch("/api/minimax/video", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ jobId: job.id }),
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      setStartError(data.error || "no se pudo iniciar el video");
+      setStartError(data.error || "no se pudo iniciar la generación");
     } else {
       setJob((prev) =>
         prev
-          ? { ...prev, status: "video_processing", minimaxVideoTaskId: data.taskId }
+          ? {
+              ...prev,
+              status: "video_processing",
+              marketingPhotoUrl: data.marketingPhotoUrl,
+              minimaxVideoTaskId: data.videoTaskId,
+            }
           : prev,
       );
     }
@@ -88,16 +71,25 @@ export default function ResultPage() {
 
       {job.status === "pending" && (
         <div className="space-y-4">
-          <ProcessingStatus job={job} onChange={setJob} />
+          <div className="rounded-lg border border-white/10 bg-white/5 p-4">
+            <Image
+              src={job.originalPhotoUrl}
+              alt="preview"
+              width={768}
+              height={384}
+              unoptimized
+              className="mx-auto max-h-96 rounded object-contain"
+            />
+          </div>
           <div className="flex justify-end">
-            <Button onClick={startEdit} disabled={starting}>
-              {starting ? "Iniciando..." : "Iniciar edición con AI"}
+            <Button onClick={startGenerate} disabled={starting}>
+              {starting ? "Iniciando..." : "Generar contenido AI"}
             </Button>
           </div>
         </div>
       )}
 
-      {(job.status === "editing" ||
+      {(job.status === "generating_image" ||
         job.status === "video_processing" ||
         job.status === "ready") && (
         <div className="space-y-6">
@@ -105,21 +97,13 @@ export default function ResultPage() {
             <ProcessingStatus job={job} onChange={setJob} />
           )}
 
-          {job.status === "editing" && job.editedPhotoUrl && (
-            <div className="flex justify-end">
-              <Button onClick={startVideo} disabled={starting}>
-                {starting ? "Iniciando..." : "Generar video"}
-              </Button>
-            </div>
-          )}
-
           {job.status === "ready" ? (
             <ResultDisplay job={job} />
           ) : (
             <div className="rounded-lg border border-white/10 bg-white/5 p-4">
-              {job.editedPhotoUrl ? (
+              {job.marketingPhotoUrl ? (
                 <Image
-                  src={job.editedPhotoUrl}
+                  src={job.marketingPhotoUrl}
                   alt="preview"
                   width={768}
                   height={384}

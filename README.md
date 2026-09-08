@@ -10,10 +10,10 @@ almacenamiento local.
 ## Features
 
 - Upload de foto + descripción corta + categoría
-- Edición de foto con MiniMax (image edit)
-- Generación de video desde la foto editada (image-to-video, ~5 s)
+- Generación de imagen de marketing con MiniMax (`/v1/image_generation`, sync)
+- Generación de video desde la foto original con MiniMax (`/v2/video_generation`, async, webhook)
 - 6 categorías con prompts por defecto editables: Zapatos, Ropa, Electrónica, Cosméticos, Alimentos, Hogar
-- Webhook de MiniMax → descarga automática de outputs al filesystem local
+- Webhook de MiniMax con handshake de challenge → descarga automática del video al filesystem local
 - Publicación a Instagram, TikTok y Facebook (config opcional)
 - Tracking de jobs en JSON local (`data/jobs.json`)
 
@@ -36,8 +36,7 @@ npm run dev
 
 Variables mínimas:
 - `MINIMAX_API_KEY`
-- `MINIMAX_WEBHOOK_SECRET` (para validar firma)
-- `APP_BASE_URL` (necesario para webhooks)
+- `APP_BASE_URL` (necesario para webhooks, debe ser accesible públicamente)
 - `STORAGE_DIR` (default: `<proyecto>/data`)
 
 Las credenciales de redes sociales son opcionales; si están vacías esos botones
@@ -49,30 +48,30 @@ simplemente no se pueden usar.
 1. Usuario sube foto + descripción + categoría en /
 2. POST /api/upload guarda la foto, crea job, devuelve jobId
 3. UI redirige a /results/{jobId}
-4. Usuario hace clic en "Iniciar edición" → POST /api/minimax/edit
-5. MiniMax procesa y hace POST a /api/webhooks/minimax cuando termina
-6. Webhook descarga la imagen editada a /data/outputs y actualiza el job
-7. UI hace polling a /api/jobs/{id} cada 4s
-8. Cuando editedPhotoUrl aparece, usuario hace clic en "Generar video"
-9. POST /api/minimax/video inicia la tarea; webhook descarga el mp4
-10. Cuando status === "ready", UI muestra ResultDisplay con descargas y
-    formulario para publicar a redes
+4. Usuario hace clic en "Generar contenido AI" → POST /api/jobs/{id}/generate
+5. Backend llama MiniMax /v1/image_generation (sync, ~3s)
+6. Descarga la imagen a /data/outputs y la asocia al job
+7. Backend llama MiniMax /v2/video_generation (async, devuelve task_id)
+8. UI hace polling a /api/jobs/{id} cada 4s
+9. MiniMax hace handshake challenge con /api/webhooks/minimax
+10. Cuando el video termina, MiniMax POSTea update a /api/webhooks/minimax
+11. Webhook descarga el mp4 a /data/outputs y marca el job como "ready"
+12. UI muestra ResultDisplay con descargas y formulario para publicar a redes
 ```
 
 ## Estructura
 
 ```
 app/
-  page.tsx                   # formulario
-  results/[id]/page.tsx      # página de resultados
+  page.tsx                          # formulario
+  results/[id]/page.tsx             # página de resultados
   api/
-    upload/                  # POST: crea job desde form-data
-    jobs/[id]/               # GET: estado del job (polling)
-    minimax/edit/            # POST: inicia edición de imagen
-    minimax/video/           # POST: inicia generación de video
-    webhooks/minimax/        # POST: recibe resultados async
-    files/[...path]/         # GET: sirve uploads/outputs estáticos
-    social/post/             # POST: publica a IG/TT/FB
+    upload/                         # POST: crea job desde form-data
+    jobs/[id]/                      # GET: estado del job (polling)
+    jobs/[id]/generate/             # POST: image sync + video async
+    webhooks/minimax/               # POST: challenge handshake + video updates
+    files/[...path]/                # GET: sirve uploads/outputs estáticos
+    social/post/                    # POST: publica a IG/TT/FB
 components/
   ProductForm.tsx
   CategoryPicker.tsx
@@ -80,33 +79,33 @@ components/
   ResultDisplay.tsx
   ui/ (button, input, textarea)
 lib/
-  minimax.ts                 # cliente API MiniMax
-  storage.ts                 # filesystem local
-  categories.ts              # 6 categorías + prompts por categoría
-  jobs.ts                    # CRUD sobre data/jobs.json
+  minimax.ts                        # cliente API MiniMax
+  storage.ts                        # filesystem local
+  categories.ts                     # 6 categorías + prompts por categoría
+  jobs.ts                           # CRUD sobre data/jobs.json
   types.ts
-  validations.ts             # zod
+  validations.ts                    # zod
   social/
     instagram.ts
     tiktok.ts
     facebook.ts
 data/
-  uploads/                   # fotos originales
-  outputs/                   # fotos editadas y videos
-  jobs.json                  # estado de jobs
+  uploads/                          # fotos originales
+  outputs/                          # imagen marketing + videos
+  jobs.json                         # estado de jobs
 ```
 
-## Endpoints MiniMax asumidos
+## Endpoints MiniMax usados
 
-El cliente en `lib/minimax.ts` apunta a endpoints que se deben ajustar al
-contrato real de tu plan MiniMax:
+Basado en `https://platform.minimax.io/docs/api-reference/`:
 
-- `POST /image/edit` — recibe `{ image, prompt, webhook_url }`
-- `POST /video/image-to-video` — recibe `{ image, motion_prompt, duration, webhook_url }`
-- `GET /tasks/{id}` — status polling fallback
-- Webhooks con header `x-minimax-signature` (HMAC-SHA256)
-
-Edita `lib/minimax.ts` si los paths reales son distintos.
+- `POST /v1/image_generation` (sync) — recibe `{ model, prompt, aspect_ratio, response_format, n }`
+  y opcional `{ subject_reference: [{ type: "character", image_file }] }`.
+  Retorna `{ data.image_urls[], metadata }`.
+- `POST /v2/video_generation` (async) — recibe `{ model, content: [{type: "text"}, {type: "image_url", role: "first_frame"}], resolution, duration, callback_url }`.
+  Retorna `{ task_id }`.
+- `GET /v2/query/video_generation/{task_id}` — polling fallback.
+- Webhook callback con handshake `challenge` (responder `{ challenge }` para verificar).
 
 ## Limitaciones conocidas
 

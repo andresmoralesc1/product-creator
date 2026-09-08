@@ -1,7 +1,4 @@
-import crypto from "node:crypto";
-import type { MiniMaxTaskResponse } from "./types";
-
-const BASE_URL = process.env.MINIMAX_BASE_URL || "https://api.minimax.io/v1";
+const BASE_URL = "https://api.minimax.io";
 const API_KEY = process.env.MINIMAX_API_KEY || "";
 
 function authHeaders(): Record<string, string> {
@@ -12,69 +9,126 @@ function authHeaders(): Record<string, string> {
   };
 }
 
-async function request<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(`${BASE_URL}${path}`, {
+export interface ImageGenInput {
+  prompt: string;
+  aspectRatio?: "1:1" | "16:9" | "4:3" | "3:2" | "2:3" | "3:4" | "9:16" | "21:9";
+  referenceImageUrl?: string;
+  n?: number;
+}
+
+export interface ImageGenResponse {
+  imageUrls: string[];
+  usage?: { success_count: number; failed_count: number };
+}
+
+export async function generateImage(input: ImageGenInput): Promise<ImageGenResponse> {
+  const body: Record<string, unknown> = {
+    model: "image-01",
+    prompt: input.prompt,
+    aspect_ratio: input.aspectRatio ?? "1:1",
+    response_format: "url",
+    n: input.n ?? 1,
+  };
+
+  if (input.referenceImageUrl) {
+    body.subject_reference = [
+      { type: "character", image_file: input.referenceImageUrl },
+    ];
+  }
+
+  const res = await fetch(`${BASE_URL}/v1/image_generation`, {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify(body),
   });
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`MiniMax ${path} failed (${res.status}): ${text}`);
+    throw new Error(`MiniMax image_generation failed (${res.status}): ${await res.text()}`);
   }
-  return (await res.json()) as T;
-}
-
-export interface ImageEditInput {
-  imageUrl: string;
-  prompt: string;
+  const data = (await res.json()) as {
+    data?: { image_urls?: string[] };
+    metadata?: { success_count: number; failed_count: number };
+  };
+  return {
+    imageUrls: data.data?.image_urls ?? [],
+    usage: data.metadata,
+  };
 }
 
 export interface VideoGenInput {
   imageUrl: string;
-  motionPrompt: string;
-  durationSec?: number;
+  prompt: string;
+  durationSec?: 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15;
+  resolution?: "480P" | "768P" | "2K";
+  model?: "MiniMax-H3" | "MiniMax-H3-Max";
 }
 
-export async function editImage(input: ImageEditInput): Promise<MiniMaxTaskResponse> {
-  return request<MiniMaxTaskResponse>("/image/edit", {
-    image: input.imageUrl,
-    prompt: input.prompt,
-    webhook_url: `${process.env.APP_BASE_URL}/api/webhooks/minimax`,
-  });
+export interface VideoGenResponse {
+  taskId: string;
 }
 
-export async function generateVideoFromImage(input: VideoGenInput): Promise<MiniMaxTaskResponse> {
-  return request<MiniMaxTaskResponse>("/video/image-to-video", {
-    image: input.imageUrl,
-    motion_prompt: input.motionPrompt,
+export async function generateVideoFromImage(input: VideoGenInput): Promise<VideoGenResponse> {
+  const body = {
+    model: input.model ?? "MiniMax-H3",
+    content: [
+      { type: "text", text: input.prompt },
+      {
+        type: "image_url",
+        image_url: { url: input.imageUrl },
+        role: "first_frame",
+      },
+    ],
+    resolution: input.resolution ?? "768P",
     duration: input.durationSec ?? 5,
-    webhook_url: `${process.env.APP_BASE_URL}/api/webhooks/minimax`,
-  });
-}
+    ratio: "adaptive",
+    callback_url: `${process.env.APP_BASE_URL}/api/webhooks/minimax`,
+  };
 
-export async function getTask(taskId: string): Promise<MiniMaxTaskResponse> {
-  const res = await fetch(`${BASE_URL}/tasks/${taskId}`, {
+  const res = await fetch(`${BASE_URL}/v2/video_generation`, {
+    method: "POST",
     headers: authHeaders(),
+    body: JSON.stringify(body),
   });
-  if (!res.ok) throw new Error(`MiniMax task fetch failed (${res.status})`);
-  return (await res.json()) as MiniMaxTaskResponse;
+  if (!res.ok) {
+    throw new Error(`MiniMax video_generation failed (${res.status}): ${await res.text()}`);
+  }
+  const data = (await res.json()) as { task_id?: string };
+  if (!data.task_id) throw new Error("MiniMax did not return task_id");
+  return { taskId: data.task_id };
 }
 
-export function verifyWebhookSignature(
-  rawBody: string,
-  signature: string | null,
-): boolean {
-  const secret = process.env.MINIMAX_WEBHOOK_SECRET;
-  if (!secret) return true;
-  if (!signature) return false;
-  const expected = crypto
-    .createHmac("sha256", secret)
-    .update(rawBody)
-    .digest("hex");
+export type VideoTaskStatus =
+  | "queued"
+  | "running"
+  | "succeeded"
+  | "failed"
+  | "cancelled";
+
+export interface VideoTask {
+  id: string;
+  status: VideoTaskStatus;
+  content?: { url?: string };
+  error?: { code: string; message: string };
+  created_at?: number;
+  updated_at?: number;
+}
+
+export async function getVideoTask(taskId: string): Promise<VideoTask> {
+  const res = await fetch(
+    `${BASE_URL}/v2/query/video_generation/${taskId}`,
+    { headers: authHeaders() },
+  );
+  if (!res.ok) {
+    throw new Error(`MiniMax task fetch failed (${res.status}): ${await res.text()}`);
+  }
+  const data = (await res.json()) as { task: VideoTask };
+  return data.task;
+}
+
+export async function handleWebhookChallenge(rawBody: string): Promise<string | null> {
   try {
-    return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature));
+    const event = JSON.parse(rawBody) as { challenge?: string };
+    return event.challenge ?? null;
   } catch {
-    return false;
+    return null;
   }
 }
