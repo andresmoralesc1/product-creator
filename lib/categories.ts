@@ -3,10 +3,10 @@ import type { CategoryPreset, CategoryId } from "./types";
 export const CATEGORIES: CategoryPreset[] = [
   {
     id: "shoes",
-    label: "Zapatos",
+    label: "Tenis",
     emoji: "👟",
     defaultPrompt:
-      "Studio product photo of premium footwear, clean white background, soft shadows, e-commerce ready, sharp focus on materials and stitching, 4K.",
+      "Professional commercial e-commerce studio product photograph of the sneaker. Completely remove any hands, fingers, arms, or human body parts holding or touching the shoes. Strictly preserve and protect all original sneaker details: exact colors, textures, materials, brand logos, silhouette, stitching, shoelaces, and sole tread without alteration or distortion. The sneaker is resting cleanly on a minimalist studio podium with natural soft contact shadows. Clean neutral light gray studio backdrop with gentle gradient, diffuse softbox studio lighting, ultra-sharp focus, crisp 4K advertising catalog look.",
   },
   {
     id: "clothing",
@@ -47,7 +47,7 @@ export const CATEGORIES: CategoryPreset[] = [
 
 export const VIDEO_MOTION_PROMPTS: Record<CategoryId, string> = {
   shoes:
-    "Slow cinematic 360 degree rotation of the shoe on a clean studio turntable, soft shadows, smooth camera orbit.",
+    "High-end commercial advertisement for the sneakers. Dynamic yet elegant camera motion with a smooth 360-degree rotational orbit and gentle push-in close-up emphasizing the sneaker's premium materials, sole, and design. Clean luxury studio lighting with subtle moving soft reflections across the sneaker, minimalist commercial stage, crisp fluid motion, professional 4K television commercial cinematography.",
   clothing:
     "Gentle camera pan over the garment flowing slightly in the breeze, soft fabric movement, elegant retail showcase.",
   electronics:

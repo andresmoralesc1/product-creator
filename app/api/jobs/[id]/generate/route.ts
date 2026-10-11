@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { getJob, updateJob } from "@/lib/jobs";
-import { generateVideoFromImage } from "@/lib/minimax";
+import { startVeoVideo } from "@/lib/veo";
 import { editProductImage } from "@/lib/nano-banana";
 import { VIDEO_MOTION_PROMPTS } from "@/lib/categories";
-import { STORAGE_PATHS } from "@/lib/storage";
+import { STORAGE_PATHS, readFileBytes } from "@/lib/storage";
 import path from "node:path";
 import fs from "node:fs/promises";
 
@@ -41,8 +41,12 @@ export async function POST(
 
     await updateJob(id, { status: "editing_image" });
 
+    const { buffer: originalBuffer, mime: originalMime } = await readFileBytes(job.originalPhotoUrl);
+
+    // 1. nano-banana product-preserving edit
     const edit = await editProductImage({
-      imageUrl: job.originalPhotoUrl,
+      imageBuffer: originalBuffer,
+      mimeType: originalMime,
       prompt: job.prompt,
     });
     const marketingPhotoUrl = await saveBase64Image(
@@ -51,23 +55,25 @@ export async function POST(
       id,
     );
 
-    const motionPrompt = `${VIDEO_MOTION_PROMPTS[job.category]} ${job.prompt}`;
-    const videoRes = await generateVideoFromImage({
-      imageUrl: job.originalPhotoUrl,
+    // 2. Google Veo video generation using the clean studio photo as starting frame
+    const editedImageBuffer = Buffer.from(edit.imageBase64, "base64");
+    const motionPrompt = `${VIDEO_MOTION_PROMPTS[job.category]} ${job.description ? `Product: ${job.description}.` : ""}`;
+    const videoRes = await startVeoVideo({
+      imageBuffer: editedImageBuffer,
+      mimeType: edit.mime || "image/png",
       prompt: motionPrompt,
-      durationSec: 5,
-      resolution: "768P",
+      durationSeconds: 5,
     });
 
     await updateJob(id, {
       status: "video_processing",
       marketingPhotoUrl,
-      minimaxVideoTaskId: videoRes.taskId,
+      veoOperationId: videoRes.operationName,
     });
 
     return NextResponse.json({
       marketingPhotoUrl,
-      videoTaskId: videoRes.taskId,
+      veoOperationId: videoRes.operationName,
     });
   } catch (err) {
     try {

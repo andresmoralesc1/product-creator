@@ -1,3 +1,5 @@
+import { readFileBytes } from "./storage";
+
 const ENDPOINT =
   "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent";
 const API_KEY = process.env.GEMINI_API_KEY || "";
@@ -11,8 +13,10 @@ function base64ToBuffer(input: string): { mime: string; data: Buffer } {
 }
 
 export interface EditImageInput {
-  imageUrl: string;
+  imageUrl?: string;
   imageBase64?: string;
+  imageBuffer?: Buffer;
+  mimeType?: string;
   prompt: string;
 }
 
@@ -22,23 +26,38 @@ export interface EditImageResponse {
 }
 
 export async function editProductImage(input: EditImageInput): Promise<EditImageResponse> {
-  if (!API_KEY) throw new Error("GEMINI_API_KEY is not set");
+  if (!API_KEY) throw new Error("GEMINI_API_KEY is not set in environment");
 
   let imagePart: { inline_data: { mime_type: string; data: string } };
-  if (input.imageBase64) {
+
+  if (input.imageBuffer) {
+    const mime = input.mimeType || "image/jpeg";
+    imagePart = {
+      inline_data: { mime_type: mime, data: input.imageBuffer.toString("base64") },
+    };
+  } else if (input.imageBase64) {
     const { mime, data } = base64ToBuffer(input.imageBase64);
     imagePart = {
       inline_data: { mime_type: mime, data: data.toString("base64") },
     };
+  } else if (input.imageUrl) {
+    if (input.imageUrl.startsWith("/api/files/")) {
+      const { buffer, mime } = await readFileBytes(input.imageUrl);
+      imagePart = {
+        inline_data: { mime_type: mime, data: buffer.toString("base64") },
+      };
+    } else {
+      const res = await fetch(input.imageUrl);
+      if (!res.ok) throw new Error(`Failed to fetch input image: ${res.status}`);
+      const buffer = Buffer.from(await res.arrayBuffer());
+      const contentType = res.headers.get("content-type") || "image/jpeg";
+      const mime = contentType.split(";")[0];
+      imagePart = {
+        inline_data: { mime_type: mime, data: buffer.toString("base64") },
+      };
+    }
   } else {
-    const res = await fetch(input.imageUrl);
-    if (!res.ok) throw new Error(`Failed to fetch input image: ${res.status}`);
-    const buffer = Buffer.from(await res.arrayBuffer());
-    const contentType = res.headers.get("content-type") || "image/jpeg";
-    const mime = contentType.split(";")[0];
-    imagePart = {
-      inline_data: { mime_type: mime, data: buffer.toString("base64") },
-    };
+    throw new Error("No image input provided to editProductImage");
   }
 
   const body = {

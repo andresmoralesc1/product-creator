@@ -41,7 +41,7 @@ export default function ResultPage() {
               ...prev,
               status: "video_processing",
               marketingPhotoUrl: data.marketingPhotoUrl,
-              minimaxVideoTaskId: data.videoTaskId,
+              veoOperationId: data.veoOperationId,
             }
           : prev,
       );

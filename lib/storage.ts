@@ -65,3 +65,15 @@ export async function readFileBytes(storagePath: string): Promise<{ buffer: Buff
     "image/jpeg";
   return { buffer, mime };
 }
+
+export async function saveVideo(
+  buffer: Buffer,
+  jobId: string,
+  ext: string = ".mp4",
+): Promise<string> {
+  await ensureStorage();
+  const filename = `output-${jobId}-video${ext}`;
+  const filepath = path.join(STORAGE_PATHS.outputs, filename);
+  await fs.writeFile(filepath, buffer);
+  return `/api/files/output/${filename}`;
+}

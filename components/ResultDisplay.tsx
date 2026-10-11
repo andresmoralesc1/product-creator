@@ -114,8 +114,8 @@ export function ResultDisplay({ job }: Props) {
             label="Marketing"
             mono="Gemini · 2.5 Flash Image"
             download={{
-              href: job.marketingPhotoUrl,
-              name: `marketing-${job.id}`,
+              href: `${job.marketingPhotoUrl}?download=1`,
+              name: `marketing-${job.id}.png`,
             }}
           >
             <Image
@@ -132,13 +132,17 @@ export function ResultDisplay({ job }: Props) {
 
       {job.videoUrl && (
         <StudioFrame
-          label="Video"
-          mono={`MiniMax · H3 · 768P · 5s`}
-          download={{ href: job.videoUrl, name: `video-${job.id}` }}
+          label="Video Publicitario"
+          mono="Google Veo · 720P · 5s"
+          download={{
+            href: `${job.videoUrl}?download=1`,
+            name: `video-${job.id}.mp4`,
+          }}
         >
           <video
             src={job.videoUrl}
             controls
+            playsInline
             className="aspect-video w-full bg-bg"
           />
         </StudioFrame>

@@ -33,6 +33,7 @@ export interface ProductJob {
   videoUrl?: string;
   errorMessage?: string;
   minimaxVideoTaskId?: string;
+  veoOperationId?: string;
   socialPosts?: {
     instagram?: string;
     tiktok?: string;

@@ -10,8 +10,8 @@ interface Props {
 
 const STEPS: { id: ProductJob["status"]; label: string; mono: string }[] = [
   { id: "editing_image", label: "Editando foto", mono: "GEMINI · FLASH IMAGE" },
-  { id: "video_processing", label: "Generando video", mono: "MINIMAX · H3 · 768P" },
-  { id: "ready", label: "Listo", mono: "WEBHOOK · OK" },
+  { id: "video_processing", label: "Generando video", mono: "GOOGLE VEO · 720P" },
+  { id: "ready", label: "Listo", mono: "GOOGLE AI · OK" },
 ];
 
 export function ProcessingStatus({ job, onChange }: Props) {

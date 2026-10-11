@@ -27,9 +27,18 @@ export async function GET(
     }
 
     const { buffer, mime } = await readFileBytes(`/${kind}/${filename}`);
-    return new NextResponse(new Uint8Array(buffer), {
-      headers: { "Content-Type": mime, "Cache-Control": "public, max-age=31536000" },
-    });
+    const url = new URL(_req.url);
+    const forceDownload = url.searchParams.get("download") === "1" || url.searchParams.get("download") === "true";
+
+    const headers: Record<string, string> = {
+      "Content-Type": mime,
+      "Cache-Control": "public, max-age=31536000",
+    };
+    if (forceDownload) {
+      headers["Content-Disposition"] = `attachment; filename="${filename}"`;
+    }
+
+    return new NextResponse(new Uint8Array(buffer), { headers });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "file fetch failed" },
