@@ -9,3 +9,7 @@ dist
 data/jobs.json
 data/uploads/
 data/outputs/
+
+data/
+
+ecosystem.config.js

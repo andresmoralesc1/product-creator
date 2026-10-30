@@ -13,6 +13,12 @@ export const STORAGE_PATHS = {
 export async function ensureStorage() {
   await fs.mkdir(STORAGE_PATHS.uploads, { recursive: true });
   await fs.mkdir(STORAGE_PATHS.outputs, { recursive: true });
+  try {
+    const uploadLink = path.join(STORAGE_DIR, "upload");
+    const outputLink = path.join(STORAGE_DIR, "output");
+    await fs.symlink("uploads", uploadLink);
+    await fs.symlink("outputs", outputLink);
+  } catch {}
 }
 
 export function safeExtension(url: string): string {
@@ -54,7 +60,13 @@ export async function saveUpload(
 }
 
 export async function readFileBytes(storagePath: string): Promise<{ buffer: Buffer; mime: string }> {
-  const filepath = path.join(STORAGE_DIR, storagePath.replace(/^\/api\/files\//, ""));
+  let rel = storagePath.replace(/^\/api\/files\//, "").replace(/^\//, "");
+  if (rel.startsWith("upload/")) {
+    rel = "uploads/" + rel.slice(7);
+  } else if (rel.startsWith("output/")) {
+    rel = "outputs/" + rel.slice(7);
+  }
+  const filepath = path.join(STORAGE_DIR, rel);
   const buffer = await fs.readFile(filepath);
   const ext = path.extname(filepath).toLowerCase();
   const mime =

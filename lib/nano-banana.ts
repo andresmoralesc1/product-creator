@@ -1,7 +1,6 @@
 import { readFileBytes } from "./storage";
 
-const ENDPOINT =
-  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent";
+const DEFAULT_MODEL = process.env.NANO_BANANA_MODEL || "gemini-2.5-flash-image";
 const API_KEY = process.env.GEMINI_API_KEY || "";
 
 function base64ToBuffer(input: string): { mime: string; data: Buffer } {
@@ -72,7 +71,8 @@ export async function editProductImage(input: EditImageInput): Promise<EditImage
     },
   };
 
-  const res = await fetch(`${ENDPOINT}?key=${API_KEY}`, {
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${DEFAULT_MODEL}:generateContent`;
+  const res = await fetch(`${endpoint}?key=${API_KEY}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),

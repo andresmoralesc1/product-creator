@@ -1,7 +1,7 @@
 import { GoogleGenAI, GenerateVideosOperation } from "@google/genai";
 
 const API_KEY = process.env.GEMINI_API_KEY || "";
-const DEFAULT_VEO_MODEL = process.env.VEO_MODEL || "veo-2.0-generate-001";
+const DEFAULT_VEO_MODEL = process.env.VEO_MODEL || "veo-3.1-generate-preview";
 
 function getClient(): GoogleGenAI {
   if (!API_KEY) {

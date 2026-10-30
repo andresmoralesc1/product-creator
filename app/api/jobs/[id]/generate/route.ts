@@ -32,7 +32,7 @@ export async function POST(
     if (!job) {
       return NextResponse.json({ error: "job not found" }, { status: 404 });
     }
-    if (job.status !== "pending") {
+    if (job.status !== "pending" && job.status !== "failed") {
       return NextResponse.json(
         { error: `cannot generate from status ${job.status}` },
         { status: 400 },

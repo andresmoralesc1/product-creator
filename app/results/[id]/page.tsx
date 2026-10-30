@@ -78,7 +78,7 @@ export default function ResultPage() {
         </Link>
       </header>
 
-      {job.status === "pending" && (
+      {(job.status === "pending" || job.status === "failed") && (
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-[1fr_28rem]">
           <figure className="border-y border-rule py-6">
             <figcaption className="mb-4 flex items-baseline justify-between">
@@ -86,7 +86,7 @@ export default function ResultPage() {
                 Original · {job.id}
               </span>
               <span className="font-display text-lg italic text-ink">
-                Pendiente
+                {job.status === "failed" ? "Error previo" : "Pendiente"}
               </span>
             </figcaption>
             <Image
@@ -100,6 +100,12 @@ export default function ResultPage() {
           </figure>
 
           <div className="space-y-6 lg:sticky lg:top-12 lg:self-start">
+            {job.status === "failed" && job.errorMessage && (
+              <div className="border border-accent bg-accent/5 p-4 text-xs text-ink font-mono">
+                <span className="text-accent font-bold uppercase tracking-wider block mb-1">Aviso:</span>
+                {job.errorMessage}
+              </div>
+            )}
             <div>
               <p className="mb-3 font-mono text-micro uppercase tracking-kicker text-ink-dim">
                 Pasos
@@ -124,7 +130,7 @@ export default function ResultPage() {
             </div>
             <div className="flex justify-end">
               <Button onClick={startGenerate} disabled={starting}>
-                {starting ? "Iniciando…" : "Generar contenido"}
+                {starting ? "Iniciando…" : job.status === "failed" ? "Reintentar generación" : "Generar contenido"}
               </Button>
             </div>
           </div>
